@@ -1,0 +1,541 @@
+---
+title: "Prediction of Price Per Unit for Houses"
+author: "Tushar Khatri"
+date: "31/08/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Context 
+
+```
+This project was made because we were intrigued and  we wanted  to  gain  hands-on  experience with the Regression Project .
+
+```
+
+# Objective
+
+```
+Prediction  as  a  method, which is known as a "toy issue," identifying problems that are 
+not of immediate scientific relevance but are helpful to demonstrate  and  practice.  
+The  objective  was to  forecast the price of a house per unit area for  various  "features"   that would  be established in the following sections.
+
+```
+
+# Problem Statement
+```
+Create a Regression Model to  estimate  the  price  of  houses per unit area.
+
+```
+
+# Data
+```
+The  data  is  the  most  important  aspect  of  a  assignment, to which  special attention    should  be paid.  Indeed,  the  data  will  heavily  affect  the  findings depending  on  where  we  found  them,  how  they  are presented, if  they are consistent,if there is  an outlier,  and so on. To obtain, clean, and convert the data, many sub steps are required. 
+We  will  go  through  these  steps  to  understand how  they've  been  used  in  my  project 
+
+```
+# Dataset 
+```
+Data set : https://www.kaggle.com/datasets/quantbruce/real-estate-price-prediction
+
+```
+
+
+# Importing Library
+```{r}
+library(readxl)
+
+library(dplyr)
+
+library(moments)
+
+library(ggplot2)
+
+library(psych)
+```
+
+# Reading data using read.csv
+```{r}
+data<-read.csv("C:/Users/TUSHAR/Downloads/PROJECT  (CV) EXCEL SHEET/Real estate.csv")
+print(head(data))
+```
+##### Dropping some columns which will be of no use.
+```{r}
+data = data[-c(1,6,7)]
+print(head(data))
+```
+##### Renaming Columns
+```{r}
+colnames(data)<-c("transaction_date","house_age","distance_MRT_station","num_conv_stores",
+                  "price_perunit_area","Bedroom.","Bathroom." )
+```
+```{r}
+data$Bedroom.[data$price_perunit_area<=30]=1
+data$Bedroom.[data$price_perunit_area>30 & data$price_perunit_area<=55]=2
+data$Bedroom.[data$price_perunit_area>55 & data$price_perunit_area<=80]=3
+data$Bedroom.[data$price_perunit_area>80]=4
+
+data$Bathroom.[data$price_perunit_area<=45]=1
+data$Bathroom.[data$price_perunit_area>45 & data$price_perunit_area<=80]=2
+data$Bathroom.[data$price_perunit_area>80]=3
+
+
+```
+
+##### Checking Null Values
+```{r}
+lapply(data,is.null)
+
+#No null values found in any coloumn of the Dataset
+```
+
+
+### Data type and Data Description of Coloumn
+
+```
+Transaction_Date:         This coloumn gives the year of the transaction.
+House_Age :               This coloumn represnets the age of House.
+Distance_MRT_station :    This coloumn describes about the Distance of the property 
+                          from the MRT station
+Num_Conv_Stores:          This coloumn gives the number of convienience store near 
+                          that house.
+Price_perunit_area :      This coloumn describes about the price per unit of that 
+                          property.
+Bedroom:                  This coloumn describes about the number of bedroom in that house.
+Bathroom:                 This coloumn describes about the number of bathroom in that house.
+
+```
+
+### Data Structure
+```{r}
+
+str(data)
+
+```
+
+### Data Cleaning 
+
+#1.) Extracting useful info from "transaction_date" column. Like Year, Quarter.
+
+#2.) Transaction date column has 2 parts Year.MonthCode
+
+#3.) Each month equals to 83.33 units additional to their previous month.
+
+#4.) Eg-> 2013.250 means -> Year is 2013 and month is 250/83.33 (i.e 3rd)
+
+#5.) Converting Transaction month in the form of Quarters.
+
+```{r}
+data$transaction_year<-as.numeric(substr(data$transaction_date,1,4))
+data$transaction_month<-as.numeric((substr(data$transaction_date*1000,5,7)))
+data$transaction_month[data$transaction_month<=250]=1
+data$transaction_month[data$transaction_month<=500 & data$transaction_month>250]=2
+data$transaction_month[data$transaction_month<=750 & data$transaction_month>500]=3
+data$transaction_month[data$transaction_month>=750]=4
+
+print(head(data))
+```
+
+# Histogram Plots
+#### These Plots are helpful to understand the nature of coloumn
+```{r}
+library(ggplot2)
+p<-ggplot(data, aes(x=price_perunit_area)) + 
+  geom_histogram(color="black", fill="skyblue")
+p
+```
+
+### Interpretation
+```
+1) From the plot we can see it is approximately normal distributed and have unique mode
+2) A the values of price per unit area increases count also increases uoto certain level then decreases after certain point.
+having maximum frequency around 42 approximately.
+```
+```{r}
+p2<-ggplot(data, aes(x=house_age)) + 
+  geom_histogram(color="black", fill="skyblue")
+p2
+```
+### Interpretation
+```
+1) From the plot we can see it doesn't have unique mode.
+2) From the plot we can see it not distributed uniformly according to the age variable
+```
+```{r}
+p3<-ggplot(data, aes(x=distance_MRT_station)) + 
+  geom_histogram(color="black", fill="skyblue")
+p3
+```
+### Interpretation
+```
+1) From the plot we can see it is skewed towards right showing as the distance from mrt station icreases the value of count 
+  variables go on decreasing.
+2) After certain distance >5000 we can see the number of houses are very low as compared to before that showing 
+   negative correlation between distance and count variable.
+```
+```{r}
+p4<-ggplot(data, aes(x=num_conv_stores)) + 
+  geom_histogram(color="black", fill="skyblue")
+p4
+```
+```{r}
+p5<-ggplot(data, aes(x=Bedroom.)) + 
+  geom_histogram(color="black", fill="skyblue")
+p5
+```
+### Interpretation
+```
+1) From the plot we can see the count of houses haveing 2 bedroom is maximum as comapred to the houses having 1 and 3 bedroom.
+2) From the plot we can interpret than mode is 2 .
+```
+```{r}
+p6<-ggplot(data, aes(x=Bathroom.)) + 
+  geom_histogram(color="black", fill="skyblue")
+p6
+```
+```{r}
+p7<-ggplot(data, aes(x=transaction_year)) + 
+
+  geom_histogram(color="black", fill="skyblue")
+p7
+
+```
+
+# Scatter Plots
+##### These Plots help to explain the values and how they are scattered
+```{r}
+plot(data$distance_MRT_station,data$price_perunit_area,col="skyblue",
+     xlab="distance_MRT_station",ylab="price_perunit_area")
+```
+### Interpretation
+```
+1) From the scatter plot we can see that as distance from MRT station icreases price per unit decreases for houses.
+2) We can see there is oulier showing price per unit area is 120 when distance is closest to station.
+```
+```{r}
+plot(data$num_conv_stores,data$price_perunit_area,col="skyblue",xlab="num_conv_stores",ylab="price_perunit_area")
+```
+### Interpretation
+```
+1) From the plot we can see that as the number of conv store increaes the variability between the price of houses decreases 
+2) And as the number of stores goes on increasing price also increases showing positive correlation (relationship) between theses two variable
+```
+```{r}
+plot(data$house_age,data$price_perunit_area,col="skyblue",xlab="House age",ylab="price_perunit_area")
+```
+
+```{r}
+plot(data$Bedroom.,data$price_perunit_area,col="skyblue",xlab="No of Bedroom",ylab="price_perunit_area")
+```
+
+```{r}
+plot(data$Bathroom.,data$price_perunit_area,col="skyblue",xlab="No of Bathroom",ylab="price_perunit_area")
+```
+
+# Boxplot
+#### Looking for Outliers
+```{r}
+par(mfrow=c(2,2))
+boxplot(data$house_age,main = "Outliers in  boxplots for House age ",col = "orange",
+        border = "brown",horizontal = T,notch = T)
+```
+
+### Interpretation
+
+```
+1) From the boxplot in house age we can see that median is shifted more towards first quartile showing highly skewed data,
+2) We can there there is almost no outlier in house age data.
+3) It is skewed towards right 
+```
+```{r}
+boxplot(data$distance_MRT_station,main = "Outliers in boxplots for distance_MRT_station "
+        ,col = "orange",border = "brown",horizontal = T,notch = T)
+
+```
+
+### Interpretation
+
+```
+1) From the boxplot in distance mrt staion we can see that median is shifted more towards first quartile showing highly skewed data,
+2) We can there there are many ouliers in house age data.
+3) It is highly skewed towards right.
+
+```
+```{r}
+boxplot(data$num_conv_stores,main = "Outliers in boxplots for num_conv_stores",
+        col = "orange",border = "brown",horizontal = T,notch = T)
+```
+
+### Interpretation
+
+```
+1) From the boxplot in distance mrt staion we can see that median is shifted more towards third quartile showing highly skewed data,
+2) We can there there are almost no outliers in house age data.
+3) It is highly skewed towards left.
+
+```
+
+```{r}
+boxplot(data$price_perunit_area,main = "Outliers in boxplots for price_perunit_area",
+        col = "orange",border = "brown",horizontal = T,notch = T)
+```
+
+# Correlation Plot
+
+##### This helps us to understand whether variables are linearly related or not. 
+
+```{r}
+library(psych)
+corPlot(data, cex = 0.8)
+```
+
+### Interpretation
+```
+1) From the correlation plot we can the which variables are correlated or not One way to quantify this relationship is to use
+the Pearson correlation coefficient, which is a measure of the linear association between two variables. It has a value between
+-1 and 1 where:
+
+-1 indicates a perfectly negative linear correlation between two variables
+0 indicates no linear correlation between two variables
+1 indicates a perfectly positive linear correlation between two variables
+
+2)Correlation matrix will be colored in like a heat map to make the correlation coefficients darker color showing 
+high correlation and vice versa.
+
+3)One key assumption of multiple linear regression is that no independent variable in the model is highly correlated with another variable in the model.
+
+When two independent variables are highly correlated, this results in a problem known as multicollinearity and it can make it 
+hard to interpret the results of the regression.
+```
+
+```{r}
+panel.hist <- function(x, ...) {
+    usr <- par("usr")
+    on.exit(par(usr))
+    par(usr = c(usr[1:2], 0, 1.5))
+    his <- hist(x, plot = FALSE)
+    breaks <- his$breaks
+    nB <- length(breaks)
+    y <- his$counts
+    y <- y/max(y)
+    rect(breaks[-nB], 0, breaks[-1], y, col = rgb(0, 1, 1, alpha = 0.5), ...)
+}
+
+panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...) {
+    usr <- par("usr")
+    on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    Cor <- abs(cor(x, y))
+    txt <- paste0(prefix, format(c(Cor, 0.123456789), digits = digits)[1])
+    if(missing(cex.cor)) {
+        cex.cor <- 0.4 / strwidth(txt)
+    }
+    text(0.5, 0.5, txt,
+         cex = 1 + cex.cor * Cor)
+}
+
+
+pairs(data,labels=colnames(data),main = "House price prediction",pch = 21,upper.panel =panel.cor,diag.panel = panel.hist,lower.panel = panel.smooth)
+```
+
+# Creating Multiple Regression Model 
+```
+# In Mutiple Regression, the Null Hypothesis is that the coefficients associated with the variables is equal to zero. 
+# The alternate hypothesis is that the coefficients are not equal to zero 
+# (i.e. there exists a relationship between the independent variable in question and the dependent variable).
+# P value has 3 stars which means x is of very high statistical significance.
+# P value is less than 0. Genraaly below 0.05 is considered good.
+# R-Squared tells us is the proportion of variation in the dependent (response) variable 
+  that has been explained by this model.
+```
+
+```{r}
+model = lm(data$price_perunit_area~data$house_age+data$distance_MRT_station+
+             data$num_conv_stores+data$Bedroom.+data$Bathroom.,data) 
+#Create the Multiple regression model
+print(model)
+```
+
+### Review the summary of the model fitted
+```{r}
+model = lm(data$price_perunit_area~data$house_age+data$distance_MRT_station+
+             data$num_conv_stores+data$Bedroom.+data$Bathroom.,data) #Create the linear regression
+print(model)
+
+```
+### Summary Description
+```{r}
+model = lm(data$price_perunit_area~data$house_age+data$distance_MRT_station+
+             data$num_conv_stores+data$Bedroom.+data$Bathroom.,data) #Create the linear regression
+summary(model)
+```
+
+### Looking at some key statistics from the summary
+```
+The values we are concerned with are -
+
+1)The coefficients and significance (p-values)
+2)R-squared
+3)F statistic and its significance
+
+###
+1) The p-value for house age is 0.11580 In other words, there’s 11.58% chance
+that this predictor is not meaningful for the regression.
+
+2) The p-value for Distance MRT station is < 8.95e-14 A very small value means that 
+age is probably an excellent addition to our model.
+
+3) The p-value for num_conv_stores  is 0.137249.In other words, there’s 13.72% chance
+that this predictor is not meaningful for the regression.
+
+4) The p-value for No of Bedroom  is < 2e-16. A very small value means that 
+age is probably an excellent addition to our model.
+
+5) The p-value for the number of Bathroom is < 2e-16. A very small value means that 
+age is probably an excellent addition to our model.
+
+
+###
+2) R - squared is 0.8989
+Meaning that  89.89% of the variance in House price prediction is explained by explainatory variable
+
+###
+3) F statistic has a very low p value (practically low)
+Meaning that the model fit is statistically significant, and the explained variance isn't purely by chance.
+
+###
+4) Transacation Year and Transaction month hav every high p value showing they are not meaningful to be Predictor Variable.
+
+
+So far we have seen how to build a linear regression model using the whole dataset. If we 
+build it that way, there is no way to tell how the model will perform with new data. So 
+the preferred practice is to split your dataset into a 80:20 sample (training:test), then,
+build the model on the 80% sample and then use the model thus built to predict the dependent
+variable on test data.
+
+Doing it this way, we will have the model predicted values for the 20% data (test) as well 
+as the actuals (from the original dataset). By calculating accuracy measures (like min_max
+accuracy) and error rates (MAPE or MSE), we can find out the prediction accuracy of the model.
+
+```
+# Buiding Model on Training Data
+
+### Traning Dataset
+```{r}
+set.seed(100) 
+trainingRowIndex <- sample(1:nrow(data), 0.8*nrow(data))
+trainingData <- data[trainingRowIndex, ]  # model training data
+testData  <- data[-trainingRowIndex, ]   # test data
+```
+
+```{r}
+set.seed(100) 
+trainingRowIndex <- sample(1:nrow(data), 0.8*nrow(data))
+trainingData <- data[trainingRowIndex, ]  # model training data
+testData  <- data[-trainingRowIndex, ]   # test data
+lmMod <- lm(price_perunit_area ~ house_age + distance_MRT_station +num_conv_stores+Bedroom.+Bathroom.,data=trainingData)  
+# build the model
+distPred <- predict(lmMod, testData)  # predict price per unit area
+
+
+
+```
+
+##### Interpretation
+```
+1) We have applied t-test to know whether the particular variable is correlated with 
+ variable which has to be predicted or not(response variable).
+ 
+2)From the model summary, the model p value and predictor’s p value are less than the 
+significance level, so we know we have a statistically significant model.
+```
+# Regression Plots
+
+### Plot of Line of Best fits
+```{r}
+par(mfrow=c(3,3))
+plot(y=data$price_perunit_area, x=data$house_age,xlab="house_age")
+abline(lm(data$price_perunit_area~data$house_age),col="blue")
+
+plot(y=data$price_perunit_area, x=data$distance_MRT_station,xlab="distance_MRT_station")
+abline(lm(data$price_perunit_area~data$distance_MRT_station),col="blue")
+
+plot(y=data$price_perunit_area, x=data$num_conv_stores,xlab="num_conv_stores")
+abline(lm(data$price_perunit_area~data$num_conv_stores),col="blue")
+
+plot(y=data$price_perunit_area, x=data$Bedroom.,xlab="No of Bedroom")
+abline(lm(data$price_perunit_area~data$Bedroom.),col="blue")
+
+plot(y=data$price_perunit_area, x=data$Bathroom.,xlab="No of Bedroom")
+abline(lm(data$price_perunit_area~data$Bathroom.),col="blue")
+
+plot(y=data$price_perunit_area, x=data$transaction_year,xlab="Transaction Year")
+abline(lm(data$price_perunit_area~data$transaction_year),col="blue")
+
+plot(y=data$price_perunit_area, x=data$transaction_month,xlab="Transaction Month")
+abline(lm(data$price_perunit_area~data$transaction_month),col="blue")
+
+```
+
+### Residual Plot
+```{r}
+res <- resid(model)
+
+# Looking for patterns in the residuals
+
+
+plot(fitted(model), res)
+abline(0,0)
+qqnorm(res)
+qqline(res) 
+```
+
+##### Interpretation
+```
+1)We have produced a Q-Q plot in plot 1, which is useful for determining if the residuals
+follow a normal distribution. If the data values in the plot fall along a roughly straight
+line at a 45-degree angle then the data is normally distributed.Here it is normally distributed
+
+```
+
+### Density plot of Residual
+```{r}
+# We need to check if the error terms are also normally distributed (which is infact, one of
+
+# the major assumptions of linear regression), let us plot the histogram of the error terms 
+
+# and see what it looks like.
+
+res <- resid(model)
+p<-ggplot(data, aes(x=res)) + 
+  geom_histogram(aes(y=..density..),color="black", fill="blue")+geom_density()
+p
+sd(res)
+mean(res)
+ 
+```
+##### Interpretation
+```
+1) From the residual plot we can see the density curve of the residual is approximately        normally distributed.
+2) It is symmtric about 0 (approximately) so it can be said it is normally distributed 
+approximately with mean 0 and standard deviation approximately equals to  4.325714/
+
+```
+
+# Results 
+```
+On the basis of above we found that the multiple regresssion model fitted to Real Estate House Prediction Data is 
+price_perunit_area= -0.031876*House_Age - 0.001845*distance_MRT_station  + 0.143415*num_conv_stores  + 12.293575*Bedroom. 
+                     + 10.704493*Bathroom. 
+```
+# Conclusions
+```
+With  several  characteristics, the  suggested  method predicts  the  property  price. We dvided data into 80:20 to test 
+Data on remaining data(20%) to  get  the  best  model.  Value of R^2 for this model was found to be descent showing model
+fits well to the data and explains greatest variablility in data.
+
+```
+
