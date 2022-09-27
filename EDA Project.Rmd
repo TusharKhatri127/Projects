@@ -1,0 +1,24 @@
+---
+title: "Credit Risk modelling EDA"
+author: "Tushar Khatri"
+date: "05/09/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE , warning = FALSE , message = FALSE)
+```
+
+# Introduction
+``` 
+The kernel is taken from Lao Tse under the CC0 public licence (usability 7/10). Data is related to the credit market. Feel free to modify, discuss or improve the code.
+```
+
+# Aims of the analysis
+```
+The aims of the analysis is to search for statistical relationships that could give us some insigths about the the risk of credit for both lenders and borrowers. Given that the variables and the context of the dataset are not fully explained, we are not going to take into account external macroeconomic events, which could completely change the results of the analysis. For instance, different countries could have different loan's requirement, or different phases of the economic cycle could end up in a very different scenario. Therefore, the aim of the analysis is purely descriptive and should be adapted according to circumstances.
+```
